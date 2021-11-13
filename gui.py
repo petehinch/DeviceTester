@@ -127,10 +127,10 @@ class Window(tk.Frame):
 
         self.commands_frame = tk.Frame(self,
                                         height = 150,
-                                        width = 350,
+                                        width = 400,
                                         bg = "#D9D8D7",
                                         borderwidth=2)
-        self.commands_frame.place(x=40,y=150)
+        self.commands_frame.place(x=50,y=150)
 
         device_commands_lbl = tk.Label(self.commands_frame, text='Device Commands', relief="groove")
         device_commands_lbl.place(x=4,y=1)
@@ -143,16 +143,30 @@ class Window(tk.Frame):
             print(key)
             count += 1
             print(count)
-            command_lbl = tk.Label(self.commands_frame, text=key)
-            command_lbl.place(x=26, y=count*30)
+
+            command_frame = tk.Frame(self.commands_frame,
+                                    height = 80,
+                                    width = 350,
+                                    bg = "#FFFFFF",
+                                    borderwidth=0)
+            command_frame.place(x=26, y=count*30)
+
+            command_lbl = tk.Label(command_frame, text=key, padx=5, width=15)
+            command_lbl.grid(row=1, column=0)
 
             #value = value.replace('\\x', '\\\\x')
             print(repr(value))
-            command_string_lbl = tk.Entry(self.commands_frame, text=repr(value))
+            command_string_lbl = tk.Entry(command_frame, text=repr(value))
             command_string_lbl.delete(0,"end")
             command_string_lbl.insert(0, repr(value))
-            command_string_lbl.place(x=100, y=count*30)
+            command_string_lbl.grid(row=1, column=1)
             command_labels.append(command_lbl)
+
+            send_command_btn = tk.Button(command_frame, text='Send', command=lambda: self.send_command(key, value))
+            send_command_btn.grid(row=1, column=2)
+
+    def send_command(self, command, command_string):
+        print(f'Sending Command {command} {command_string}')
 
 def main():
     """
