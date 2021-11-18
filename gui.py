@@ -13,7 +13,9 @@ add view commands as hex
 """
 import sys
 import tkinter as tk
+import tkinter.scrolledtext
 import binascii
+from tkinter.constants import YES
 from devices_ver_1_0 import Devices
 from serial_port_ver_1_0 import SerialPort
 
@@ -29,10 +31,7 @@ class Window(tk.Frame):
         self.master = master
         self.serial_port = None
         
-        self.master.geometry('500x400')
-        print(type(self.master))
-        print(dir(self.master))
-        #help(seself.master)
+        #self.master.geometry('500x400')
 
         self.commands_frame = None
         self.settings_frame = None
@@ -40,19 +39,22 @@ class Window(tk.Frame):
         self.selected_model = ''
         self.selected_manufacturer = ''
 
+        self.rcvData = ''
+
         # allowing the widget to take the full space of the root window
         self.master.columnconfigure(0, weight=1)
+        self.master.columnconfigure(1, weight=4)
         #self.columnconfigure(1, weight=2)
         self.master.rowconfigure(0, weight=1)
         self.device_frame = self.create_device_frame(self.master)
         self.device_frame.grid(column=0, row=0, sticky="NEW")
 
-
-        #self.columnconfigure(1, weight=2)
-
+        self.comms_frame = self.create_comms_frame(self.master)
+        self.comms_frame.grid(column=1, row=0, rowspan=4, sticky="NSEW")
+ 
 
         self.bottom_frame = self.create_bottom_frame(self.master)
-        self.bottom_frame.grid(column=0, row=3,sticky="SEW")
+        self.bottom_frame.grid(column=0, row=3, columnspan=2,sticky="SEW")
 
 
 
@@ -68,7 +70,7 @@ class Window(tk.Frame):
             frame: frame holding device options
         """
 
-        frame = tk.Frame(container,bg="#D9D8D7", borderwidth=4)
+        frame = tk.Frame(container,bg="#D9D8D7", borderwidth=4, width=400)
 
         frame.columnconfigure(0, weight=1)
         
@@ -79,7 +81,8 @@ class Window(tk.Frame):
         output_lbl = tk.Label(frame,
                                 text='Device',
                                 borderwidth=2,
-                                relief="groove")
+                                relief="groove",
+                                width=70)
         # place label on the window
         output_lbl.grid(column=0, row=0, columnspan=2,sticky=(tk.E, tk.W))
 
@@ -88,7 +91,7 @@ class Window(tk.Frame):
                                     relief="groove",
                                     width=20,
                                     height=1)
-        manufacturer_lbl.grid(column=0, row=1, sticky=(tk.E, tk.W))
+        manufacturer_lbl.grid(column=0, row=1, sticky='EW')
 
         # Create the list of options
         #manufacturer_list = ["Philips", "Samsung", "LG", "Extron"]
@@ -98,7 +101,6 @@ class Window(tk.Frame):
         value_inside = tk.StringVar(self.master)
         # Set the default value of the variable
         value_inside.set("Select an Manufacturer")
-        print('value_inside=', value_inside)
         # Create the optionmenu widget and passing
         # the options_list and value_inside to it.
         manufacturer_menu = tk.OptionMenu(frame, value_inside,
@@ -136,9 +138,8 @@ class Window(tk.Frame):
         count = 0
 
         for command_name, value in commands.items():
-            print(command_name)
+
             count += 1
-            print(count)
 
             command_frame = tk.Frame(frame,
                                     height = 100,
@@ -154,10 +155,7 @@ class Window(tk.Frame):
             command_lbl = tk.Label(command_frame, text=command_name, padx=5, width=15)
             command_lbl.grid(column=0, row=0, sticky="NW", padx=5, pady=5)
 
-            #value = value.replace('\\x', '\\\\x')
-            #value = value[1:-1]
-            print('pete')
-            print(value)
+
             command_string_lbl = tk.Entry(command_frame, text=value)
             command_string_lbl.delete(0,"end")
             command_string_lbl.insert(0, repr(value)[1:-1])
@@ -167,10 +165,6 @@ class Window(tk.Frame):
             bytes_value = value.encode('utf-8')
 
             hex_string = '\\x' + binascii.hexlify(bytes_value, ' ').decode('utf-8').replace(' ', '\\x')
-
-            
-
-            print(f'Hex Command string = {hex_string}')
 
             command_hex_lbl = tk.Entry(command_frame, text=hex_string)
             command_hex_lbl.delete(0, "end")
@@ -208,6 +202,35 @@ class Window(tk.Frame):
 
         return frame
 
+    def create_comms_frame(self, container):
+
+        frame = tk.Frame(container,bg="green", borderwidth=4, width=400)
+
+        frame.columnconfigure(0, weight=1)
+
+
+        label = tk.Label(frame, text='Comms')
+        label.grid(column=0, row=0, sticky='EW')
+
+        sentData_title_lb = tk.Label(frame, text= 'Sent Data')
+        sentData_title_lb.grid(column=0, row=1, sticky='W')
+
+        sentData_lb = tk.Label(frame, text='',height=10 , width=50)
+        sentData_lb.grid(column=0, row=2,sticky='NSEW')
+
+        rcvData_title_lb = tk.Label(frame, text= 'rcv Data')
+        rcvData_title_lb.grid(column=0, row=3, sticky='W')
+
+        self.rcvData_lb = tk.scrolledtext.ScrolledText(frame,height=7, width=50, bd=1, relief="solid", fg='black', wrap=tk.WORD)
+        self.rcvData_lb.insert(tk.END, "Just a text Widget\nin two lines\n")
+        self.rcvData_lb.grid(column=0, row=4,sticky='NEW')
+
+        # scrollbar = tk.Scrollbar(self.rcvData_lb)
+        # scrollbar.pack(fill="y", expand=False)
+
+        return frame
+
+
     def create_bottom_frame(self, container):
 
         frame = tk.Frame(container,bg="#FFFFFF", borderwidth=1, height=50) 
@@ -243,6 +266,7 @@ class Window(tk.Frame):
             self.serial_port = SerialPort(None)
             self.serial_port.port = SerialPort.list_serial_ports()[0]
             self.serial_port.port_state_changed_callback = self.port_state_changed
+            self.serial_port.rcv_callback = self.rcv_data
 
         if self.device:
             self.serial_port.baudrate = self.device['settings']['baudrate']
@@ -294,8 +318,6 @@ class Window(tk.Frame):
             model ([type]): [description]
         """
 
-        print(f'Model Selected ={model}')
-
         if self.commands_frame is not None:
             self.commands_frame.destroy()
 
@@ -307,7 +329,6 @@ class Window(tk.Frame):
         self.settings_frame = self.create_settings_frame(self.master, self.device)
         self.settings_frame.grid(column=0, row=1, sticky="SEW")
 
-
     def send_command(self, command, command_bytes):
         """[summary]
 
@@ -315,10 +336,7 @@ class Window(tk.Frame):
             command ([type]): [description]
             command_string ([type]): [description]
         """
-        print(type(command_bytes))
         print(f'Sending Command {command} {command_bytes}')
-
-        print(len(command_bytes))
 
         self.serial_port.send(command_bytes)
 
@@ -330,6 +348,11 @@ class Window(tk.Frame):
         else:
             self.serial_port_lbl.configure(bg ='red')
             self.serial_port.close()
+
+    def rcv_data(self, data):
+        print(data)
+        self.rcvData += data.decode('utf8')
+        self.rcvData_lb.insert(tk.END, data.decode('utf8'))
 
 def on_closing():
     print('Window close button pressed')
@@ -344,7 +367,7 @@ def main():
     # set resizing to false
     #root.resizable(width=True, height=True)
     # set size of window
-    root.geometry('500x400')
+    root.geometry('800x400')
     root.config(bg="#D9D8D7")
 
     app = Window(root)

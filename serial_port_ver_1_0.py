@@ -46,9 +46,6 @@ class SerialPort(serial.Serial):
 
     def send(self, data):
 
-        print(type(data))
-        print(data)
-
         if self.is_open:
             try:
                 self.write(data)
@@ -63,10 +60,10 @@ class SerialPort(serial.Serial):
     def recieve_data(self):
 
         while self.port_open:
-            print('Running')
+            #print('Running')
             if self.in_waiting:
                 data = self.read_all()
-                print(f'Recieved >{data}')
+                #print(f'Recieved >{data}')
                 self.rcv_callback(data)
             time.sleep(0.1)
             
