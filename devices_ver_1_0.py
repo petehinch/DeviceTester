@@ -14,9 +14,13 @@ class Devices():
                                     'model': 'BDL1101',
                                     'commands':
                                         {
-                                            'Power On': '\x01\x02\x03',
-                                            'Power Off': '\x01\x02\x04',
-                                            'HDMI 1': '\x03\x02\x06'
+                                            'Power On': b'\x01\x02\x03'.decode('utf8').replace("'", '"'),
+                                            'Power Off': b'\x01\x02\x04'.decode('utf8').replace("'", '"'),
+                                            'HDMI 1': b'\x03\x02\x06'.decode('utf8').replace("'", '"')
+                                        },
+                                    'settings':
+                                        {
+                                            'baudrate': 9600
                                         }
                                 },
                                 {
@@ -26,6 +30,10 @@ class Devices():
                                         {
                                             'Power On': '\x01\x02\x03',
                                             'Power Off': '\x01\x02\x04'
+                                        },
+                                    'settings':
+                                        {
+                                            'baudrate': 9600
                                         }
                                 },
                                 {
@@ -33,8 +41,12 @@ class Devices():
                                     'model': 'UX12345',
                                     'commands':
                                         {
-                                            'Power On': 'PWR ON',
-                                            'Power Off': 'PWR OFF'
+                                            'Power On': 'PWR ON\r',
+                                            'Power Off': 'PWR OFF\n'
+                                        },
+                                    'settings':
+                                        {
+                                            'baudrate': 115200
                                         }
                                 },
                                 {
@@ -44,6 +56,10 @@ class Devices():
                                         {
                                             'Power On': 'POWER ON',
                                             'Power Off': 'POWER OFF'
+                                        },
+                                    'settings':
+                                        {
+                                            'baudrate': 38400
                                         }
                                 }
                                 ]
@@ -125,15 +141,18 @@ def main():
     """
     devices = Devices()
 
-    print(devices.get_list_devices())
-    devices.devicelist_to_json()
+    #print(devices.get_list_devices())
+    #devices.devicelist_to_json()
     #print(devices.get_manufacturer_list())
 
-    print(devices.get_models_by_manufacture('Philips'))
+   # print(devices.get_models_by_manufacture('Philips'))
 
     device = devices.get_device('Philips', 'BDL1101')
 
     print(device['commands'])
+
+    for command, cmd_string in device['commands'].items():
+        print(command, cmd_string.encode())
 
 if __name__ == '__main__':
     main()
